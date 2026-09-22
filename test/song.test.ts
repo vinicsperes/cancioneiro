@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isChordLine, mergeChords, parseSong, songChords, splitHeading } from '../src/song.ts';
+import { isChordLine, mergeChords, parseSong, sliceTab, songChords, splitHeading } from '../src/song.ts';
 
 test('tells chord lines from lyrics', () => {
   assert.ok(isChordLine('Em            D    C'));
@@ -58,6 +58,39 @@ B|--------|
     ],
   );
   assert.deepEqual(songChords(song), ['C#m', 'E', 'E9', 'Em', 'D5(9)', 'C', 'G', 'D']);
+});
+
+test('keeps a chord line over a tab at its columns and trims the empty end of the tab', () => {
+  const song = parseSong(`[Solo]
+    F       G
+E|----------------------|
+B|--5-8---5-------------|  (2x)
+G|------7---------------|
+`);
+  assert.deepEqual(song.blocks[0].lines, [
+    {
+      type: 'tab',
+      chords: '    F       G',
+      rows: ['E|-------------|', 'B|--5-8---5----|  (2x)', 'G|------7------|'],
+    },
+  ]);
+  assert.deepEqual(songChords(song), ['F', 'G']);
+});
+
+test('slices a tab only where no string has a note, keeping bar lines with their measure', () => {
+  const slices = sliceTab(['E|-10-|', 'B|--3-|'], '   Am ');
+  assert.deepEqual(
+    slices.map((s) => s.rows),
+    [
+      ['E|', 'B|'],
+      ['-', '-'],
+      ['10-|', '-3-|'],
+    ],
+  );
+  assert.deepEqual(
+    slices.map((s) => s.chords),
+    ['  ', ' ', 'Am  '],
+  );
 });
 
 test('reads the key from a pasted "Tom:" line and ignores non-breaking spaces', () => {

@@ -10,7 +10,8 @@ export interface Segment {
 export type Line =
   | { type: 'lyric'; segments: Segment[] }
   | { type: 'chords'; tokens: string[] }
-  | { type: 'tab'; rows: string[] };
+  /** `chords` is a chord line written straight above the tab, kept at its columns. */
+  | { type: 'tab'; rows: string[]; chords?: string };
 
 export interface Block {
   label?: string;
@@ -78,6 +79,46 @@ export function mergeChords(chordLine: string, lyricLine: string): Segment[] {
   const tail = segments[segments.length - 1];
   tail.text = tail.text.trimEnd();
   return segments;
+}
+
+/** Cifra sites pad a tab with empty strings up to its closing bar; keeps just a bit of it. */
+function trimTab(rows: string[], chords: string): [string[], string] {
+  const end = rows[0].lastIndexOf('|');
+  if (rows.some((row) => row.lastIndexOf('|') !== end)) return [rows, chords];
+  let start = end;
+  while (start > 0 && rows.every((row) => row[start - 1] === '-') && (chords[start - 1] ?? ' ') === ' ') start--;
+  if (end - start <= 2) return [rows, chords];
+  const cut = (row: string) => row.slice(0, start + 2) + row.slice(end);
+  return [rows.map(cut), cut(chords)];
+}
+
+export interface TabSlice {
+  chords: string;
+  rows: string[];
+}
+
+/**
+ * Cuts a tab into narrow vertical slices that end where no string has a note and
+ * no chord name is written, so a tab wider than its column can wrap like a staff.
+ */
+export function sliceTab(rows: string[], chords = ''): TabSlice[] {
+  const width = Math.max(chords.length, ...rows.map((row) => row.length));
+  const chordRow = chords.padEnd(width);
+  const padded = rows.map((row) => row.padEnd(width));
+  const clear = (col: number) => chordRow[col] === ' ' && padded.every((row) => '-| '.includes(row[col]));
+  const barline = (col: number) =>
+    padded.some((row) => row[col] === '|') && padded.every((row) => '| '.includes(row[col]));
+
+  const slices: TabSlice[] = [];
+  let start = 0;
+  for (let col = 0; col < width; col++) {
+    const last = col + 1 === width;
+    // A bar line stays with the measure it closes.
+    if (!last && !(clear(col) && !barline(col + 1))) continue;
+    slices.push({ chords: chordRow.slice(start, col + 1), rows: padded.map((row) => row.slice(start, col + 1)) });
+    start = col + 1;
+  }
+  return slices;
 }
 
 function parseHeader(song: Song, lines: string[]): void {
@@ -168,11 +209,17 @@ export function parseSong(text: string): Song {
       continue;
     }
 
-    if (isTabLine(line)) {
-      const rows = [line];
+    const chordsOverTab = isChordLine(line) && i + 1 < lines.length && isTabLine(lines[i + 1]);
+    if (chordsOverTab || isTabLine(line)) {
+      const chords = chordsOverTab ? line : undefined;
+      const rows = [lines[chordsOverTab ? ++i : i]];
       while (i + 1 < lines.length && isTabLine(lines[i + 1])) rows.push(lines[++i]);
-      const indent = Math.min(...rows.map((row) => row.search(/\S/)));
-      push({ type: 'tab', rows: rows.map((row) => row.slice(indent)) });
+      const indent = Math.min(...[chords ?? '', ...rows].filter(Boolean).map((row) => row.search(/\S/)));
+      const [trimmed, above] = trimTab(
+        rows.map((row) => row.slice(indent)),
+        chords?.slice(indent) ?? '',
+      );
+      push({ type: 'tab', rows: trimmed, ...(chords && { chords: above }) });
       continue;
     }
 
@@ -221,7 +268,11 @@ export function songChords(song: Song): string[] {
   for (const block of song.blocks) {
     for (const line of block.lines) {
       const tokens =
-        line.type === 'chords' ? line.tokens : line.type === 'lyric' ? line.segments.map((s) => s.chord ?? '') : [];
+        line.type === 'chords'
+          ? line.tokens
+          : line.type === 'lyric'
+            ? line.segments.map((s) => s.chord ?? '')
+            : (line.chords?.trim().split(/\s+/) ?? []);
       for (const token of tokens) {
         const name = token.startsWith('(') && token.endsWith(')') ? token.slice(1, -1) : token;
         if (name && isChord(name)) seen.add(name);

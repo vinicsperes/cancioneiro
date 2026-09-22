@@ -314,11 +314,26 @@ h1 {
   color: var(--soft);
 }
 
+/* A tab wider than its column wraps like a staff, between slices where no note sounds. */
 .tab {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.7em;
   margin: 0.2em 0 0.3em;
   font-family: 'HyperlegibleMono', monospace;
   font-size: 0.74em;
   line-height: 1.15;
+}
+
+.ts {
+  white-space: pre;
+}
+
+.tab .ch {
+  display: block;
+  min-height: 0;
+  padding-right: 0;
+  line-height: inherit;
   white-space: pre;
 }
 

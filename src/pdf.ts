@@ -53,7 +53,7 @@ function fitLayout(args: {
   const overflows = (body: HTMLElement) =>
     body.scrollHeight > body.clientHeight + 1 || body.scrollWidth > body.clientWidth + 1;
   const wrappedLines = () =>
-    [...document.querySelectorAll<HTMLElement>('.body .line')].filter((line) => {
+    [...document.querySelectorAll<HTMLElement>('.body .line:not(.tab)')].filter((line) => {
       const tops = new Set([...line.children].map((c) => Math.round(c.getBoundingClientRect().top)));
       if (tops.size > 1) return true;
       return [...line.querySelectorAll<HTMLElement>('.ly')].some(
@@ -73,8 +73,20 @@ function fitLayout(args: {
     return page;
   };
 
+  const labelTabs = () => {
+    for (const names of document.querySelectorAll<HTMLElement>('.body .tab > .names')) {
+      let top = names.getBoundingClientRect().top;
+      for (let slice = names.nextElementSibling; slice; slice = slice.nextElementSibling) {
+        if (slice.getBoundingClientRect().top <= top + 1) continue;
+        slice.before(names.cloneNode(true));
+        top = slice.getBoundingClientRect().top;
+      }
+    }
+  };
+
   const paginate = (): number => {
     document.body.innerHTML = pristine;
+    labelTabs();
     let page = document.querySelector<HTMLElement>('.page')!;
     let pages = 1;
     while (pages < MAX_PAGES) {

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { isChord, parseShapeSpec, resolveShape, type Shape } from './chords.ts';
 import { chordSvg } from './diagram.ts';
-import { songChords, type Block, type Line, type Song } from './song.ts';
+import { sliceTab, songChords, type Block, type Line, type Song } from './song.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -33,8 +33,15 @@ function chordToken(token: string): string {
 
 function renderLine(line: Line): string {
   switch (line.type) {
-    case 'tab':
-      return `<pre class="line tab">${esc(line.rows.join('\n'))}</pre>`;
+    case 'tab': {
+      const slices = sliceTab(line.rows, line.chords).map((slice, k) => {
+        const chords = line.chords ? `<b class="ch">${esc(slice.chords)}</b>` : '';
+        // The string names get repeated on every line the tab wraps onto.
+        const names = k === 0 && slice.rows.every((row) => /^[A-Ga-g][#b]?\s*\|$/.test(row));
+        return `<span class="ts${names ? ' names' : ''}">${chords}${esc(slice.rows.join('\n'))}</span>`;
+      });
+      return `<div class="line tab">${slices.join('')}</div>`;
+    }
     case 'chords':
       return `<div class="line chords-only">${line.tokens.map(chordToken).join('')}</div>`;
     case 'lyric': {
