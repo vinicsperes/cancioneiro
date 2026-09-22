@@ -61,7 +61,8 @@ has tabs. Brazilian chord notation is understood: `7M`, `4`, `(9)`, `º`,
 `m7(5-)`, `D/F#`…
 
 `npm run acordes` prints a chord reference on A4 sheets: every chord the songs use,
-each with up to three ways to play it, filed by root note.
+plus the everyday ones they don't, each with up to three ways to play it, filed by
+root note.
 
 Chord shapes come from common open voicings, then the lowest barre shape, then
 [chords-db](https://github.com/tombatossals/chords-db). To override one, add

@@ -97,6 +97,22 @@ export function toSuffix(quality: string): string | undefined {
   return SUFFIXES[quality.replace(/[()]/g, '')];
 }
 
+/**
+ * A general reference, beyond whatever the songs happen to use: the four qualities
+ * every key needs, then the ones that show up in popular music on the keys guitars
+ * like. Sharp or flat spelling follows what cifra sites write.
+ */
+export const COMMON_CHORDS: string[] = [
+  ...['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'].flatMap((root) =>
+    ['', 'm', '7', 'm7'].map((quality) => root + quality),
+  ),
+  ...['C', 'D', 'E', 'F', 'G', 'A', 'Bb', 'B'].map((root) => `${root}7M`),
+  ...['C', 'D', 'E', 'F', 'G', 'A'].map((root) => `${root}4`),
+  ...['C', 'D', 'E', 'G', 'A'].flatMap((root) => [`${root}9`, `${root}6`]),
+  ...['A', 'B', 'E'].map((root) => `${root}m7(5-)`),
+  ...['C#', 'D#', 'F#', 'G#'].map((root) => `${root}º`),
+];
+
 /** Everyday open shapes that the movable templates below don't produce. */
 const OPEN_SHAPES: Record<string, string> = {
   C: 'x32010', C7: 'x32310', C7M: 'x32000', 'C(9)': 'x32033',

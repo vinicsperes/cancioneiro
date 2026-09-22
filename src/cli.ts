@@ -5,7 +5,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { notePitch, parseChord, parseShapeSpec, shapeOptions, toSuffix, type Shape } from './chords.ts';
+import { COMMON_CHORDS, notePitch, parseChord, parseShapeSpec, shapeOptions, toSuffix, type Shape } from './chords.ts';
 import { launchBrowser, printPdf, renderPdf } from './pdf.ts';
 import { renderChords, renderSong, type ChordUse } from './render.ts';
 import { isTabLine, parseSong, songChords, splitHeading, type Song } from './song.ts';
@@ -123,7 +123,10 @@ async function buildChordSheet(files: string[]): Promise<void> {
     await browser.close();
   }
   const missing = chords.filter((c) => !c.shapes.length).map((c) => c.name);
-  console.log(`✓ ${relative(process.cwd(), out)}  (${chords.length} acordes de ${files.length} músicas)`);
+  const mine = chords.filter((c) => c.songs).length;
+  console.log(
+    `✓ ${relative(process.cwd(), out)}  (${chords.length} acordes: ${mine} das suas ${files.length} músicas, ${chords.length - mine} para estudar)`,
+  );
   if (missing.length) console.log(`  ! sem diagrama para: ${missing.join(', ')}`);
 }
 
@@ -147,6 +150,7 @@ async function chordUses(files: string[], shapes: Record<string, Shape>): Promis
     }
     for (const name of songChords(song)) count(name, 1);
   }
+  for (const name of COMMON_CHORDS) if (!spelling.has(name.replace(/º/g, '°'))) count(name, 0);
 
   // Filed like a chord dictionary: by root note, then from the everyday qualities out.
   const RANKS = ['major', 'minor', '7', 'm7', 'maj7', 'sus4', 'add9', '6', 'sus2', 'dim', 'm7b5'];
