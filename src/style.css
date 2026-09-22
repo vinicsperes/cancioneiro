@@ -223,6 +223,32 @@ h1 {
   color: var(--soft);
 }
 
+/* Study sheet: every chord on a grid of its own, each with its variations. */
+.chart {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4.5mm 7mm;
+  margin-top: 4mm;
+}
+
+.chord h3 {
+  margin: 0 0 1mm;
+  font-size: 11pt;
+  color: var(--accent);
+}
+
+.vars {
+  display: flex;
+  gap: 2.5mm;
+}
+
+/* One size for every diagram, so a chord with fewer ways to play it lines up too. */
+.vars .dg {
+  flex: none;
+  width: 17mm;
+}
+
+
 .body {
   flex: 1 1 auto;
   min-height: 0;

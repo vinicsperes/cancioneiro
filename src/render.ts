@@ -17,6 +17,7 @@ function fontCss(): string {
     fontFace('Hyperlegible', '@fontsource/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-400-normal.woff2', 400),
     fontFace('Hyperlegible', '@fontsource/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-700-normal.woff2', 700),
     fontFace('HyperlegibleMono', '@fontsource/atkinson-hyperlegible-mono/files/atkinson-hyperlegible-mono-latin-400-normal.woff2', 400),
+    fontFace('HyperlegibleMono', '@fontsource/atkinson-hyperlegible-mono/files/atkinson-hyperlegible-mono-latin-700-normal.woff2', 700),
   ].join('\n');
   return fonts;
 }
@@ -80,6 +81,68 @@ function diagramWidth(count: number): number {
   return Math.floor(width * 10) / 10;
 }
 
+function head(kicker: string, title: string): string {
+  return `<header class="head">
+    <div class="titles">
+      ${kicker ? `<p class="artist">${esc(kicker)}</p>` : ''}
+      <h1>${esc(title)}</h1>
+    </div>
+    ${markImg()}
+  </header>`;
+}
+
+function htmlPage(title: string, body: string): string {
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>${esc(title)}</title>
+<style>${fontCss()}</style>
+<style>${css}</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+}
+
+export interface ChordUse {
+  name: string;
+  /** Ways to play it, the everyday one first. */
+  shapes: Shape[];
+  songs: number;
+}
+
+/** Chords per study sheet: three across, nine down, each with its variations. */
+const PER_SHEET = 27;
+
+/** Sheets of every chord in the songbook, to study away from the songs. */
+export function chordSheets(chords: ChordUse[]): string[] {
+  const sheets = [];
+  for (let i = 0; i < chords.length; i += PER_SHEET) sheets.push(chords.slice(i, i + PER_SHEET));
+
+  const pages = sheets.map((sheet, k) => {
+    const figures = sheet.map(({ name, shapes }) => {
+      const drawings = shapes.length
+        ? shapes.map((shape) => `<div class="dg">${chordSvg(shape)}</div>`).join('')
+        : `<div class="unknown">sem diagrama</div>`;
+      return `<section class="chord"><h3>${esc(name)}</h3><div class="vars">${drawings}</div></section>`;
+    });
+    const foot = sheets.length > 1 ? `<footer class="foot">Acordes · ${k + 1}/${sheets.length}</footer>` : '';
+    return `<main class="page">
+  ${head('Cancioneiro', 'Acordes')}
+  <section class="chart">${figures.join('')}</section>
+  ${foot}
+</main>`;
+  });
+
+  return pages;
+}
+
+export function renderChords(chords: ChordUse[]): string {
+  return htmlPage('Acordes', chordSheets(chords).join('\n'));
+}
+
 export interface RenderResult {
   html: string;
   missing: string[];
@@ -109,29 +172,15 @@ export function renderSong(song: Song, globalShapes: Record<string, Shape> = {})
     song.notes.length && `<ul class="notes">${song.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`,
   ].filter(Boolean);
 
-  const html = `<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<title>${esc(song.title)}</title>
-<style>${fontCss()}</style>
-<style>${css}</style>
-</head>
-<body>
-<main class="page">
-  <header class="head">
-    <div class="titles">
-      ${song.artist ? `<p class="artist">${esc(song.artist)}</p>` : ''}
-      <h1>${esc(song.title)}</h1>
-    </div>
-    ${markImg()}
-  </header>
+  const html = htmlPage(
+    song.title,
+    `<main class="page">
+  ${head(song.artist ?? '', song.title)}
   ${extras.length ? `<div class="extras">${extras.join('')}</div>` : ''}
   ${figures.length ? `<section class="diagrams" style="--dg:${diagramWidth(figures.length)}mm">${figures.join('')}</section>` : ''}
   <section class="body">${song.blocks.map(renderBlock).join('')}</section>
-</main>
-</body>
-</html>`;
+</main>`,
+  );
 
   return { html, missing };
 }

@@ -5,10 +5,10 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { parseShapeSpec, type Shape } from './chords.ts';
-import { launchBrowser, renderPdf } from './pdf.ts';
-import { renderSong } from './render.ts';
-import { isTabLine, parseSong, splitHeading, type Song } from './song.ts';
+import { notePitch, parseChord, parseShapeSpec, shapeOptions, toSuffix, type Shape } from './chords.ts';
+import { launchBrowser, printPdf, renderPdf } from './pdf.ts';
+import { renderChords, renderSong, type ChordUse } from './render.ts';
+import { isTabLine, parseSong, songChords, splitHeading, type Song } from './song.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SONGS_DIR = join(ROOT, 'musicas');
@@ -19,6 +19,7 @@ const HELP = `cancioneiro — cifras em texto viram folhas A4 para imprimir
 
 Uso:
   cancioneiro pdf [arquivos...]          gera os PDFs (sem arquivos: todas as músicas de musicas/)
+  cancioneiro acordes [arquivos...]      gera saida/acordes.pdf: todos os acordes das músicas, para estudar
   cancioneiro nova ["Título"] ["Artista"] cria uma música a partir do texto copiado (ou da entrada padrão);
                                          sem título, usa as primeiras linhas do texto (título e artista)
 
@@ -103,6 +104,64 @@ async function buildPdfs(files: string[]): Promise<void> {
   }
 }
 
+/** Every chord in the songbook, by root and then by name, with how many songs use it. */
+async function buildChordSheet(files: string[]): Promise<void> {
+  if (!files.length) {
+    console.log(`Nenhuma música encontrada em ${relative(process.cwd(), SONGS_DIR) || SONGS_DIR}/`);
+    return;
+  }
+  await mkdir(OUT_DIR, { recursive: true });
+  // A shape set for a single song fills a gap; the shapes in acordes.txt win.
+  const shapes = await loadGlobalShapes();
+  const chords = await chordUses(files, shapes);
+
+  const out = join(OUT_DIR, 'acordes.pdf');
+  const browser = await launchBrowser();
+  try {
+    await printPdf(browser, renderChords(chords), out);
+  } finally {
+    await browser.close();
+  }
+  const missing = chords.filter((c) => !c.shapes.length).map((c) => c.name);
+  console.log(`✓ ${relative(process.cwd(), out)}  (${chords.length} acordes de ${files.length} músicas)`);
+  if (missing.length) console.log(`  ! sem diagrama para: ${missing.join(', ')}`);
+}
+
+/** Every chord of the given songs plus the common ones, filed for the study sheets. */
+async function chordUses(files: string[], shapes: Record<string, Shape>): Promise<ChordUse[]> {
+  // Cifra sites write the diminished sign as either ° or º; it is one chord either way.
+  const uses = new Map<string, number>();
+  const spelling = new Map<string, string>();
+  const count = (name: string, songs: number) => {
+    const sign = name.replace(/º/g, '°');
+    const known = spelling.get(sign) ?? name;
+    spelling.set(sign, known);
+    uses.set(known, (uses.get(known) ?? 0) + songs);
+  };
+
+  for (const file of files) {
+    const song = await loadSong(file);
+    for (const [name, spec] of Object.entries(song.shapes)) {
+      const shape = parseShapeSpec(spec);
+      if (shape) shapes[name] ??= shape;
+    }
+    for (const name of songChords(song)) count(name, 1);
+  }
+
+  // Filed like a chord dictionary: by root note, then from the everyday qualities out.
+  const RANKS = ['major', 'minor', '7', 'm7', 'maj7', 'sus4', 'add9', '6', 'sus2', 'dim', 'm7b5'];
+  const order = (name: string) => {
+    const chord = parseChord(name);
+    if (!chord) return `99 ${name}`;
+    const root = String(notePitch(chord.root)).padStart(2, '0');
+    const rank = RANKS.indexOf(toSuffix(chord.quality) ?? '');
+    return `${root} ${String(rank < 0 ? RANKS.length : rank).padStart(2, '0')} ${chord.bass ? 1 : 0} ${name}`;
+  };
+  return [...uses]
+    .sort(([a], [b]) => order(a).localeCompare(order(b)))
+    .map(([name, songs]) => ({ name, shapes: shapeOptions(name, shapes, 3), songs }));
+}
+
 async function readInput(): Promise<string> {
   if (!process.stdin.isTTY) {
     const chunks: Buffer[] = [];
@@ -163,9 +222,7 @@ async function createSong(titleArg: string | undefined, artistArg: string | unde
     if (/^s/i.test(answer)) tabs = 'sim';
   }
 
-
   await mkdir(SONGS_DIR, { recursive: true });
-
   const header = [
     '---',
     `titulo: ${title}`,
@@ -186,6 +243,9 @@ async function main(): Promise<void> {
   switch (command) {
     case 'pdf':
       await buildPdfs(args.length ? args.map((a) => resolve(a)) : await songFiles(SONGS_DIR));
+      break;
+    case 'acordes':
+      await buildChordSheet(args.length ? args.map((a) => resolve(a)) : await songFiles(SONGS_DIR));
       break;
     case 'nova':
       await createSong(args[0], args[1]);

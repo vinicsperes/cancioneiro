@@ -135,6 +135,32 @@ function fitLayout(args: {
   return { cols, fontSize, pages };
 }
 
+/** Prints a page that needs no fitting, such as the chord sheets. */
+export async function printPdf(browser: Browser, html: string, outPath: string): Promise<void> {
+  const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  try {
+    await page.emulateMedia({ media: 'print' });
+    await page.setContent(html, { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.pdf({ path: outPath, preferCSSPageSize: true, printBackground: true });
+  } finally {
+    await page.close();
+  }
+}
+
+async function fit(browser: Browser, html: string, label: string) {
+  const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  await page.emulateMedia({ media: 'print' });
+  await page.setContent(html, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts.ready);
+  const layout = await page.evaluate(fitLayout, {
+    candidates: CANDIDATES,
+    maxWrapped: MAX_WRAPPED_LINES,
+    label,
+  });
+  return { page, layout };
+}
+
 export async function renderPdf(browser: Browser, html: string, outPath: string, label: string): Promise<Layout> {
   const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
   try {

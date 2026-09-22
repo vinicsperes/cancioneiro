@@ -9,6 +9,7 @@
   },
   "scripts": {
     "pdf": "node src/cli.ts pdf",
+    "acordes": "node src/cli.ts acordes",
     "nova": "node src/cli.ts nova",
     "test": "node --test test/*.test.ts",
     "check": "tsc"

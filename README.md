@@ -27,6 +27,7 @@ npm run nova                              # title and artist read from the paste
 npm run nova -- "Song title" "Artist"     # or given explicitly
 npm run pdf                               # rebuild every song in musicas/
 npm run pdf -- musicas/artist--song.txt   # rebuild one
+npm run acordes                           # saida/acordes.pdf: every chord, to study
 ```
 
 Text is read from the clipboard, or from stdin when piped. Songs are saved to
@@ -58,6 +59,9 @@ monospaced font and wrap to fit the column. `tabs: não` in the header leaves th
 out, with the sections that hold nothing else; `npm run nova` asks when the pasted text
 has tabs. Brazilian chord notation is understood: `7M`, `4`, `(9)`, `º`,
 `m7(5-)`, `D/F#`…
+
+`npm run acordes` prints a chord reference on A4 sheets: every chord the songs use,
+each with up to three ways to play it, filed by root note.
 
 Chord shapes come from common open voicings, then the lowest barre shape, then
 [chords-db](https://github.com/tombatossals/chords-db). To override one, add
