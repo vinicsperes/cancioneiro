@@ -281,6 +281,11 @@ h1 {
   white-space: pre-wrap;
 }
 
+/* Keeps a chord that hangs past the end of the lyric up on the chord row. */
+.ly:empty::before {
+  content: '\200b';
+}
+
 /* When a chord is wider than its syllable, a dotted tie keeps the word visibly whole. */
 .join .ly::after {
   content: '';
