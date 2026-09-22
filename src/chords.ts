@@ -229,8 +229,9 @@ function dbShape(pitch: number, suffix: string): Shape | undefined {
     const frets = p.frets.map((f) => (f <= 0 ? f : f + p.baseFret - 1));
     return { frets, fingers: p.fingers, barre: barreFromFingers(frets, p.fingers) };
   });
-  // Prefer low positions with the root in the bass.
-  const score = (s: Shape) => lowestFret(s) + (bassPitch(s) === pitch ? 0 : 6);
+  // Prefer low positions with the root in the bass: an inversion near the nut beats
+  // the same chord as a barre halfway up the neck.
+  const score = (s: Shape) => lowestFret(s) + (bassPitch(s) === pitch ? 0 : 2);
   return shapes.sort((a, b) => score(a) - score(b))[0];
 }
 
