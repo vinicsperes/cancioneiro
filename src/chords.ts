@@ -212,11 +212,11 @@ function lowestFret(shape: Shape): number {
   return pressed.length ? Math.min(...pressed) : 0;
 }
 
-function movableShape(pitch: number, suffix: string): Shape | undefined {
+function movableShapes(pitch: number, suffix: string): Shape[] {
   const options: Shape[] = [];
   if (E_SHAPES[suffix]) options.push(placeTemplate(E_SHAPES[suffix], (pitch - 4 + 12) % 12));
   if (A_SHAPES[suffix]) options.push(placeTemplate(A_SHAPES[suffix], (pitch - 9 + 12) % 12));
-  return options.sort((a, b) => lowestFret(a) - lowestFret(b))[0];
+  return options.sort((a, b) => lowestFret(a) - lowestFret(b));
 }
 
 function bassPitch(shape: Shape): number | undefined {
@@ -224,9 +224,9 @@ function bassPitch(shape: Shape): number | undefined {
   return i < 0 ? undefined : (OPEN_MIDI[i] + shape.frets[i]) % 12;
 }
 
-function dbShape(pitch: number, suffix: string): Shape | undefined {
+function dbShapes(pitch: number, suffix: string): Shape[] {
   const chord = db.chords[DB_KEYS[pitch]]?.find((c) => c.suffix === suffix);
-  if (!chord) return undefined;
+  if (!chord) return [];
   const shapes = chord.positions.map((p): Shape => {
     const frets = p.frets.map((f) => (f <= 0 ? f : f + p.baseFret - 1));
     return { frets, fingers: p.fingers, barre: barreFromFingers(frets, p.fingers) };
@@ -234,7 +234,7 @@ function dbShape(pitch: number, suffix: string): Shape | undefined {
   // Prefer low positions with the root in the bass: an inversion near the nut beats
   // the same chord as a barre halfway up the neck.
   const score = (s: Shape) => lowestFret(s) + (bassPitch(s) === pitch ? 0 : 2);
-  return shapes.sort((a, b) => score(a) - score(b))[0];
+  return shapes.sort((a, b) => score(a) - score(b));
 }
 
 /** Puts `bass` as the lowest note, on the low E or the A string, if it stays within reach. */
@@ -251,23 +251,41 @@ function withBass(shape: Shape, bass: number): Shape | undefined {
   return undefined;
 }
 
-function baseShape(pitch: number, suffix: string): Shape | undefined {
-  return openShapes.get(`${pitch}:${suffix}`) ?? movableShape(pitch, suffix) ?? dbShape(pitch, suffix);
+function baseShapes(pitch: number, suffix: string): Shape[] {
+  const open = openShapes.get(`${pitch}:${suffix}`);
+  return [...(open ? [open] : []), ...movableShapes(pitch, suffix), ...dbShapes(pitch, suffix)];
 }
 
-/** Finds a shape for a chord name. Custom shapes, keyed by the exact name, win. */
-export function resolveShape(name: string, custom: Record<string, Shape> = {}): Shape | undefined {
-  if (custom[name]) return custom[name];
+/**
+ * Ways to play a chord, the one to print first. Custom shapes, keyed by the exact
+ * name, win; then everyday open shapes, movable barre shapes and the database.
+ */
+export function shapeOptions(name: string, custom: Record<string, Shape> = {}, limit = 3): Shape[] {
+  const found: Shape[] = [];
+  const add = (shape?: Shape) => {
+    const key = (s: Shape) => s.frets.join(' ');
+    if (shape && !found.some((seen) => key(seen) === key(shape))) found.push(shape);
+  };
+
+  add(custom[name]);
   const chord = parseChord(name);
-  if (!chord) return undefined;
-  const suffix = toSuffix(chord.quality);
-  if (!suffix) return undefined;
+  const suffix = chord && toSuffix(chord.quality);
+  if (chord && suffix) {
+    const pitch = notePitch(chord.root);
+    const bass = chord.bass ? notePitch(chord.bass) : pitch;
+    if (bass === pitch) {
+      for (const shape of baseShapes(pitch, suffix)) add(shape);
+    } else {
+      const base = baseShapes(pitch, suffix)[0];
+      add(base && withBass(base, bass));
+      for (const shape of dbShapes(pitch, `${suffix === 'minor' ? 'm' : ''}/${DB_BASS[bass]}`)) add(shape);
+      add(base);
+    }
+  }
+  return found.slice(0, limit);
+}
 
-  const pitch = notePitch(chord.root);
-  const base = baseShape(pitch, suffix);
-  if (!chord.bass || notePitch(chord.bass) === pitch) return base;
-
-  const bass = notePitch(chord.bass);
-  const slashSuffix = `${suffix === 'minor' ? 'm' : ''}/${DB_BASS[bass]}`;
-  return (base && withBass(base, bass)) ?? dbShape(pitch, slashSuffix) ?? base;
+/** The shape to print for a chord: the first of its options. */
+export function resolveShape(name: string, custom: Record<string, Shape> = {}): Shape | undefined {
+  return shapeOptions(name, custom, 1)[0];
 }
