@@ -50,8 +50,10 @@ Amazing grace, how sweet the sound
 ```
 
 `[Section]` labels a block (choruses get a side bar), and tab lines (`e|--0--|`) keep a
-monospaced font and wrap to fit the column. Brazilian chord notation is understood:
-`7M`, `4`, `(9)`, `º`, `m7(5-)`, `D/F#`…
+monospaced font and wrap to fit the column. `tabs: não` in the header leaves the tabs
+out, with the sections that hold nothing else; `npm run nova` asks when the pasted text
+has tabs. Brazilian chord notation is understood: `7M`, `4`, `(9)`, `º`,
+`m7(5-)`, `D/F#`…
 
 Chord shapes come from common open voicings, then the lowest barre shape, then
 [chords-db](https://github.com/tombatossals/chords-db). To override one, add

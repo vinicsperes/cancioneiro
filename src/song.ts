@@ -26,6 +26,8 @@ export interface Song {
   capo?: string;
   strum?: string;
   number?: number;
+  /** `tabs: não` in the header leaves the tabs out. */
+  tabs?: boolean;
   notes: string[];
   /** Custom chord shapes from `acorde:` fields, as `name -> spec`. */
   shapes: Record<string, string>;
@@ -147,6 +149,12 @@ function parseHeader(song: Song, lines: string[]): void {
       case 'numero':
         song.number = Number.parseInt(value, 10) || undefined;
         break;
+      case 'tab':
+      case 'tabs':
+      case 'tablatura':
+      case 'tablaturas':
+        song.tabs = !/^(n|sem|false|0)/.test(fold(value));
+        break;
       case 'obs':
       case 'nota':
         song.notes.push(value);
@@ -240,7 +248,27 @@ export function parseSong(text: string): Song {
   }
 
   song.blocks = song.blocks.filter((b) => b.lines.length || b.label);
+  if (song.tabs === false) song.blocks = withoutTabs(song.blocks);
   return song;
+}
+
+/**
+ * Leaves out every paragraph that holds a tab, along with its "Parte 1 de 6" and
+ * strumming arrows, and the labels that only introduce tabs: `[Tab - Intro]`, or
+ * a `[Solo]` followed by nothing but tabs.
+ */
+export function withoutTabs(blocks: Block[]): Block[] {
+  const hasTab = (block: Block) => block.lines.some((line) => line.type === 'tab');
+  return blocks.flatMap((block, k) => {
+    if (!hasTab(block) && block.lines.length) return [block];
+    if (!block.label || /^tab\b/i.test(block.label)) return [];
+    // The rest of the section, up to the next label.
+    const rest = blocks.slice(k + 1);
+    const next = rest.findIndex((b) => b.label);
+    const section = next < 0 ? rest : rest.slice(0, next);
+    if (hasTab(block)) return section.some((b) => !hasTab(b)) ? [{ ...block, lines: [] }] : [];
+    return section.length && section.every(hasTab) ? [] : [block];
+  });
 }
 
 /**

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { parseShapeSpec, type Shape } from './chords.ts';
 import { launchBrowser, renderPdf } from './pdf.ts';
 import { renderSong } from './render.ts';
-import { parseSong, splitHeading, type Song } from './song.ts';
+import { isTabLine, parseSong, splitHeading, type Song } from './song.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SONGS_DIR = join(ROOT, 'musicas');
@@ -143,13 +143,29 @@ async function createSong(titleArg: string | undefined, artistArg: string | unde
   // A heading that repeats the given title is dropped; anything else might be lyrics.
   const keepsHeading = titleArg !== undefined && fold(titleArg).toLowerCase() !== fold(heading.title ?? '').toLowerCase();
   const body = (keepsHeading ? text.replace(/^\s*tom:.*\n?/im, '') : heading.body).replace(/^\s*\n/, '');
+  const hasTabs = body.split('\n').some(isTabLine);
+  let tabs = 'não';
+  if (hasTabs && process.stdin.isTTY) {
+    const [answer] = await ask(['Incluir as tabs? [s/N] ']);
+    if (/^s/i.test(answer)) tabs = 'sim';
+  }
+
 
   await mkdir(SONGS_DIR, { recursive: true });
   const numbers = (await songFiles(SONGS_DIR)).map((f) => titleFromFile(f).number ?? 0);
   const number = Math.max(0, ...numbers) + 1;
   const file = join(SONGS_DIR, `${String(number).padStart(2, '0')}-${slugify(title)}.txt`);
 
-  const header = ['---', `titulo: ${title}`, `artista: ${artist ?? ''}`, `tom: ${key ?? ''}`, 'capo:', 'batida:', '---'];
+  const header = [
+    '---',
+    `titulo: ${title}`,
+    `artista: ${artist ?? ''}`,
+    `tom: ${key ?? ''}`,
+    'capo:',
+    'batida:',
+    ...(hasTabs ? [`tabs: ${tabs}`] : []),
+    '---',
+  ];
   await writeFile(file, `${header.join('\n')}\n\n${body}\n`);
   console.log(`+ ${relative(process.cwd(), file)}`);
   await buildPdfs([file]);

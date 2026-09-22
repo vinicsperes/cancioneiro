@@ -93,6 +93,50 @@ test('slices a tab only where no string has a note, keeping bar lines with their
   );
 });
 
+test('leaves out the tabs and the sections that only hold tabs with "tabs: não"', () => {
+  const text = `---
+tabs: não
+---
+
+[Tab - Intro]
+
+Parte 1 de 2
+   D       F#
+E|--2--2--|
+
+[Primeira Parte]
+
+Parte 1 de 1
+E|--0--|
+   ↓  ↑
+
+E      B
+Sometimes I feel
+
+[Solo]
+
+E|--5--|
+
+[Ponte]
+E|--7--|
+
+A9
+Under the bridge
+`;
+  const song = parseSong(text);
+  assert.deepEqual(
+    song.blocks.map((b) => [b.label, b.lines.map((l) => l.type)]),
+    [
+      ['Primeira Parte', []],
+      [undefined, ['lyric']],
+      ['Ponte', []],
+      [undefined, ['lyric']],
+    ],
+  );
+  assert.deepEqual(songChords(song), ['E', 'B', 'A9']);
+  assert.equal(parseSong(text.replace('não', 'sim')).blocks.length, 9);
+});
+
 test('reads the key from a pasted "Tom:" line and ignores non-breaking spaces', () => {
   const song = parseSong('Tom: D\n\nEm\u00a0\u00a0\u00a0D\nAll alone');
   assert.equal(song.key, 'D');
