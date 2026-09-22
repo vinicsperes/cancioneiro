@@ -1,0 +1,8 @@
+node_modules/
+saida/
+*.log
+.env
+.zenith
+
+# Cifras pessoais: letras têm direito autoral, não versionar junto com o código
+musicas/

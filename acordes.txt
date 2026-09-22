@@ -1,0 +1,8 @@
+# Formas de acorde preferidas, valem para todas as músicas.
+# Uma por linha: NOME = casas (da 6ª corda, Mi grave, para a 1ª), x = não tocar.
+# Opcionalmente, os dedos depois de "|" (0 = solta; 1 repetido na mesma casa = pestana).
+#
+# Exemplos:
+#   B      = x24442
+#   D5(9)  = x 5 7 7 5 5 | 0 1 3 4 1 1
+#   G      = 320033

@@ -1,0 +1,318 @@
+@page {
+  size: A4;
+  margin: 0;
+}
+
+:root {
+  --fs: 13pt;
+  --cols: 1;
+  --ink: #111;
+  --soft: #5c5c5c;
+  --rule: #b5b5b5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  font-family: 'Hyperlegible', 'Noto Sans', sans-serif;
+  color: var(--ink);
+  print-color-adjust: exact;
+}
+
+/* Every sheet is a fixed A4 box that the fitting step fills. A hair under
+   297mm so Chrome never spills an empty page after it. */
+.page {
+  position: relative;
+  width: 210mm;
+  height: 296.5mm;
+  padding: 11mm 13mm 10mm;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  break-after: page;
+}
+
+.page:last-child {
+  break-after: auto;
+}
+
+.foot {
+  position: absolute;
+  right: 13mm;
+  bottom: 4mm;
+  font-size: 8pt;
+  color: var(--soft);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  gap: 4mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 1.2pt solid var(--ink);
+}
+
+.num {
+  font-size: 26pt;
+  font-weight: 700;
+  line-height: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.head.mini {
+  margin-bottom: 4mm;
+  padding-bottom: 1.5mm;
+  border-bottom-width: 0.6pt;
+}
+
+.mini .num {
+  font-size: 15pt;
+}
+
+.mini h1 {
+  font-size: 13pt;
+}
+
+.mini .artist,
+.mini .meta {
+  display: none;
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 21pt;
+  line-height: 1.05;
+}
+
+.artist {
+  margin: 0.8mm 0 0;
+  font-size: 11pt;
+  color: var(--soft);
+}
+
+.meta {
+  display: flex;
+  gap: 5mm;
+  text-align: right;
+}
+
+.meta small,
+.strum small {
+  display: block;
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.meta b {
+  font-size: 13pt;
+}
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1mm 6mm;
+  margin-top: 2mm;
+  font-size: 10pt;
+}
+
+.strum {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+}
+
+.strum small {
+  display: inline;
+}
+
+.notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--soft);
+}
+
+.diagrams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 3mm;
+  padding: 3mm 0 2.5mm;
+  margin-bottom: 3.5mm;
+  border-bottom: 0.5pt solid var(--rule);
+}
+
+.dg {
+  width: var(--dg);
+  margin: 0;
+  text-align: center;
+}
+
+.dg figcaption {
+  font-size: 10pt;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dg .fret,
+.dg .string {
+  stroke: var(--ink);
+  stroke-width: 0.7;
+}
+
+.dg .nut,
+.dg .dot {
+  fill: var(--ink);
+}
+
+.dg .mark {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.9;
+}
+
+.dg .finger,
+.dg .base {
+  font-family: 'Hyperlegible', sans-serif;
+  font-weight: 700;
+  dominant-baseline: central;
+}
+
+.dg .finger {
+  font-size: 5.4px;
+  fill: #fff;
+  text-anchor: middle;
+}
+
+.dg .base {
+  font-size: 7px;
+  fill: var(--ink);
+  text-anchor: end;
+}
+
+.dg .unknown {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 69 / 60;
+  border: 0.8pt dashed var(--soft);
+  border-radius: 1.5mm;
+  font-size: 7pt;
+  color: var(--soft);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  column-count: var(--cols);
+  column-gap: 9mm;
+  column-fill: auto;
+  font-size: var(--fs);
+  line-height: 1.22;
+}
+
+.cols-2 .body {
+  column-rule: 0.5pt solid var(--rule);
+}
+
+.block {
+  margin: 0 0 0.85em;
+  break-inside: avoid;
+}
+
+.split .block {
+  break-inside: auto;
+}
+
+.label {
+  margin: 0 0 0.1em;
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--soft);
+  break-after: avoid;
+}
+
+.chorus {
+  padding-left: 0.6em;
+  border-left: 2pt solid var(--ink);
+}
+
+.line {
+  break-inside: avoid;
+}
+
+.seg {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: bottom;
+}
+
+.ch {
+  min-height: 1.1em;
+  padding-right: 0.45em;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.ly {
+  display: flex;
+  white-space: pre-wrap;
+}
+
+/* When a chord is wider than its syllable, a dotted tie keeps the word visibly whole. */
+.join .ly::after {
+  content: '';
+  flex: 1 0 0;
+  margin-bottom: 0.3em;
+  border-bottom: 1.2pt dotted var(--soft);
+}
+
+.chords-only {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em 1em;
+  margin-bottom: 0.15em;
+}
+
+.chords-only .ch {
+  padding-right: 0;
+}
+
+.fill {
+  color: var(--soft);
+}
+
+.tab {
+  margin: 0.2em 0 0.3em;
+  font-family: 'HyperlegibleMono', monospace;
+  font-size: 0.74em;
+  line-height: 1.15;
+  white-space: pre;
+}
+
+.head + .body,
+.extras + .body {
+  margin-top: 4mm;
+}

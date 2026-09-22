@@ -1,0 +1,30 @@
+{
+  "name": "cancioneiro",
+  "version": "0.1.0",
+  "description": "Transforma cifras em texto em folhas A4 prontas para imprimir, com diagramas dos acordes",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "cancioneiro": "src/cli.ts"
+  },
+  "scripts": {
+    "pdf": "node src/cli.ts pdf",
+    "nova": "node src/cli.ts nova",
+    "test": "node --test test/*.test.ts",
+    "check": "tsc"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible-mono": "^5.3.0",
+    "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
+    "@tombatossals/chords-db": "^0.5.1",
+    "playwright-core": "^1.63.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2"
+  }
+}
