@@ -286,8 +286,9 @@ h1 {
   white-space: pre-wrap;
 }
 
-/* Keeps a chord that hangs past the end of the lyric up on the chord row. */
-.ly:empty::before {
+/* A flex box drops text that is only spaces, so this keeps every lyric cell a line
+   tall: a chord that hangs past the end of the lyric stays up on the chord row. */
+.ly::before {
   content: '\200b';
 }
 
