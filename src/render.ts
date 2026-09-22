@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { isChord, parseShapeSpec, resolveShape, type Shape } from './chords.ts';
 import { chordSvg } from './diagram.ts';
@@ -22,6 +22,14 @@ function fontCss(): string {
 }
 
 const css = readFileSync(new URL('./style.css', import.meta.url), 'utf8');
+
+/** An optional `marca.png` next to the sources is printed in the top right corner. */
+function markImg(): string {
+  const file = new URL('../marca.png', import.meta.url);
+  if (!existsSync(file)) return '';
+  const data = readFileSync(file).toString('base64');
+  return `<img class="mark" alt="" src="data:image/png;base64,${data}">`;
+}
 
 function esc(text: string): string {
   return text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -119,6 +127,7 @@ export function renderSong(song: Song, globalShapes: Record<string, Shape> = {})
       <h1>${esc(song.title)}</h1>
     </div>
     ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
+    ${markImg()}
   </header>
   ${extras.length ? `<div class="extras">${extras.join('')}</div>` : ''}
   ${figures.length ? `<section class="diagrams" style="--dg:${diagramWidth(figures.length)}mm">${figures.join('')}</section>` : ''}

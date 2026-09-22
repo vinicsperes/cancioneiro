@@ -68,6 +68,16 @@ body {
   border-bottom-width: 0.6pt;
 }
 
+.mark {
+  height: 13mm;
+  width: auto;
+  align-self: center;
+}
+
+.mini .mark {
+  height: 7mm;
+}
+
 /* Continuation sheets keep the artist and title on one line. */
 .mini .titles {
   display: flex;
