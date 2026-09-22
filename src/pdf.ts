@@ -6,7 +6,11 @@ export interface Layout {
   pages: number;
 }
 
-/** In order of readability. The layout with the fewest sheets wins; ties go to the earlier one. */
+/**
+ * In order of readability. The layout with the fewest sheets wins; ties go to the
+ * earlier one. Two columns are allowed a few wrapped lines: they break between
+ * chords, so every chord stays over its syllable.
+ */
 const CANDIDATES = [
   { cols: 1, fontSize: 15 },
   { cols: 1, fontSize: 14 },
@@ -20,6 +24,8 @@ const CANDIDATES = [
   { cols: 1, fontSize: 11 },
 ];
 
+const MAX_WRAPPED_LINES = 3;
+
 export function launchBrowser(): Promise<Browser> {
   const executablePath = process.env.CHROME_PATH;
   return chromium.launch(executablePath ? { executablePath } : { channel: 'chrome' });
@@ -27,10 +33,13 @@ export function launchBrowser(): Promise<Browser> {
 
 /**
  * Runs inside the page. Every sheet is a fixed A4 box; blocks that overflow one
- * sheet move to a continuation sheet. Two-column layouts only count when no
- * lyric line wraps.
+ * sheet move to a continuation sheet.
  */
-function fitLayout(args: { candidates: { cols: number; fontSize: number }[]; label: string }): Layout {
+function fitLayout(args: {
+  candidates: { cols: number; fontSize: number }[];
+  maxWrapped: number;
+  label: string;
+}): Layout {
   const root = document.documentElement;
   const pristine = document.body.innerHTML;
   const MAX_PAGES = 12;
@@ -43,14 +52,14 @@ function fitLayout(args: { candidates: { cols: number; fontSize: number }[]; lab
   };
   const overflows = (body: HTMLElement) =>
     body.scrollHeight > body.clientHeight + 1 || body.scrollWidth > body.clientWidth + 1;
-  const wraps = () =>
-    [...document.querySelectorAll<HTMLElement>('.body .line')].some((line) => {
+  const wrappedLines = () =>
+    [...document.querySelectorAll<HTMLElement>('.body .line')].filter((line) => {
       const tops = new Set([...line.children].map((c) => Math.round(c.getBoundingClientRect().top)));
       if (tops.size > 1) return true;
       return [...line.querySelectorAll<HTMLElement>('.ly')].some(
         (ly) => ly.getBoundingClientRect().height > parseFloat(getComputedStyle(ly).lineHeight) * 1.5,
       );
-    });
+    }).length;
 
   const continuation = (after: HTMLElement): HTMLElement => {
     const page = document.createElement('main');
@@ -94,7 +103,7 @@ function fitLayout(args: { candidates: { cols: number; fontSize: number }[]; lab
     for (const split of [false, true]) {
       apply(cols, fontSize, split);
       const pages = paginate();
-      if (cols === 2 && wraps()) continue;
+      if (cols === 2 && wrappedLines() > args.maxWrapped) continue;
       if (!best || pages < best.pages) best = { cols, fontSize, split, pages };
     }
     if (best?.pages === 1) break;
@@ -120,7 +129,11 @@ export async function renderPdf(browser: Browser, html: string, outPath: string,
     await page.emulateMedia({ media: 'print' });
     await page.setContent(html, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
-    const layout = await page.evaluate(fitLayout, { candidates: CANDIDATES, label });
+    const layout = await page.evaluate(fitLayout, {
+      candidates: CANDIDATES,
+      maxWrapped: MAX_WRAPPED_LINES,
+      label,
+    });
     await page.pdf({ path: outPath, preferCSSPageSize: true, printBackground: true });
     return layout;
   } finally {
