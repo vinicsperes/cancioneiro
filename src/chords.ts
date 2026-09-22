@@ -100,6 +100,8 @@ export function toSuffix(quality: string): string | undefined {
 /** Everyday open shapes that the movable templates below don't produce. */
 const OPEN_SHAPES: Record<string, string> = {
   C: 'x32010', C7: 'x32310', C7M: 'x32000', 'C(9)': 'x32033',
+  // The database's C9 leaves out the flat seventh, so this one is spelled out.
+  'C7(9)': 'x 3 2 3 3 3 | 0 2 1 3 3 3',
   D: 'xx0232', Dm: 'xx0231', D7: 'xx0212', Dm7: 'xx0211', D7M: 'xx0222', D4: 'xx0233', Dsus2: 'xx0230',
   G: '320003', G7: '320001', G7M: '320002',
   B7: 'x21202', F7M: 'xx3210', 'F7M(11+)': 'xx3200', 'E(9)': '022102', 'Em(9)': '024000', 'A(9)': 'x02420',
