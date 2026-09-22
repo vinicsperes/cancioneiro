@@ -23,6 +23,8 @@ test('maps qualities to chord suffixes', () => {
   assert.equal(toSuffix('(9)'), 'add9');
   assert.equal(toSuffix('7(9)'), '9');
   assert.equal(toSuffix('4'), 'sus4');
+  assert.equal(toSuffix('7/4'), '7sus4');
+  assert.equal(toSuffix('4/7'), '7sus4');
   assert.equal(toSuffix('m7(5-)'), 'm7b5');
   assert.equal(toSuffix('5(9)'), 'sus2');
 });
