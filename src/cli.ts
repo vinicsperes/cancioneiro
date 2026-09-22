@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parseShapeSpec, type Shape } from './chords.ts';
 import { launchBrowser, renderPdf } from './pdf.ts';
 import { renderSong } from './render.ts';
-import { parseSong, type Song } from './song.ts';
+import { parseSong, splitHeading, type Song } from './song.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SONGS_DIR = join(ROOT, 'musicas');
@@ -18,7 +18,8 @@ const HELP = `cancioneiro — cifras em texto viram folhas A4 para imprimir
 
 Uso:
   cancioneiro pdf [arquivos...]          gera os PDFs (sem arquivos: todas as músicas de musicas/)
-  cancioneiro nova "Título" ["Artista"]  cria uma música a partir do texto copiado (ou da entrada padrão)
+  cancioneiro nova ["Título"] ["Artista"] cria uma música a partir do texto copiado (ou da entrada padrão);
+                                         sem título, usa as primeiras linhas do texto (título e artista)
 
 Os PDFs vão para saida/.`;
 
@@ -117,19 +118,25 @@ async function readInput(): Promise<string> {
   throw new Error('não consegui ler a área de transferência; envie o texto pela entrada padrão');
 }
 
-async function createSong(title: string | undefined, artist: string | undefined): Promise<void> {
-  if (!title) throw new Error('informe o título: cancioneiro nova "Título" ["Artista"]');
+async function createSong(titleArg: string | undefined, artistArg: string | undefined): Promise<void> {
   const text = (await readInput()).replace(/\r\n?/g, '\n').replace(/^\s*\n|\s+$/g, '');
   if (!text.trim()) throw new Error('o texto da cifra está vazio');
+
+  const key = /^\s*tom:\s*(\S+)/im.exec(text)?.[1];
+  const heading = splitHeading(text.replace(/^\s*tom:.*\n?/im, ''));
+  const title = titleArg ?? heading.title;
+  if (!title) throw new Error('informe o título: cancioneiro nova "Título" ["Artista"]');
+  const artist = artistArg ?? heading.artist;
+  // A heading that repeats the given title is dropped; anything else might be lyrics.
+  const keepsHeading = titleArg !== undefined && fold(titleArg).toLowerCase() !== fold(heading.title ?? '').toLowerCase();
+  const body = (keepsHeading ? text.replace(/^\s*tom:.*\n?/im, '') : heading.body).replace(/^\s*\n/, '');
 
   await mkdir(SONGS_DIR, { recursive: true });
   const numbers = (await songFiles(SONGS_DIR)).map((f) => titleFromFile(f).number ?? 0);
   const number = Math.max(0, ...numbers) + 1;
   const file = join(SONGS_DIR, `${String(number).padStart(2, '0')}-${slugify(title)}.txt`);
 
-  const key = /^\s*tom:\s*(\S+)/im.exec(text)?.[1];
   const header = ['---', `titulo: ${title}`, `artista: ${artist ?? ''}`, `tom: ${key ?? ''}`, 'capo:', 'batida:', '---'];
-  const body = text.replace(/^\s*tom:.*\n?/im, '').replace(/^\s*\n/, '');
   await writeFile(file, `${header.join('\n')}\n\n${body}\n`);
   console.log(`+ ${relative(process.cwd(), file)}`);
   await buildPdfs([file]);

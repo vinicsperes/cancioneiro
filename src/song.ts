@@ -123,7 +123,7 @@ export function parseSong(text: string): Song {
   const song: Song = { title: '', notes: [], shapes: {}, blocks: [] };
   let lines = text
     .replace(/\r\n?/g, '\n')
-    .replace(/[   ]/g, ' ')
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
     .split('\n')
     .map((line) => expandTabs(line).trimEnd());
 
@@ -194,6 +194,25 @@ export function parseSong(text: string): Song {
 
   song.blocks = song.blocks.filter((b) => b.lines.length || b.label);
   return song;
+}
+
+/**
+ * Pasted cifras often open with the title and artist, one per line, before the
+ * first section or chord line. Splits them off when the text looks like that.
+ */
+export function splitHeading(text: string): { title?: string; artist?: string; body: string } {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  let i = 0;
+  while (i < lines.length && !lines[i].trim()) i++;
+  const heading: string[] = [];
+  while (i < lines.length && lines[i].trim()) heading.push(lines[i++].trim());
+
+  const plain = (line: string) =>
+    line.length <= 60 && !isChordLine(line) && !isTabLine(line) && !SECTION_RE.test(line) && !KEY_LINE_RE.test(line);
+  const next = lines.slice(i).find((line) => line.trim());
+  const cifraFollows = !!next && (SECTION_RE.test(next) || isChordLine(next) || KEY_LINE_RE.test(next));
+  if (heading.length < 1 || heading.length > 2 || !heading.every(plain) || !cifraFollows) return { body: text };
+  return { title: heading[0], artist: heading[1], body: lines.slice(i).join('\n') };
 }
 
 /** Chords in the order they first show up, ignoring bar marks and repeat signs. */

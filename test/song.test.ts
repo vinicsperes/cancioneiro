@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isChordLine, mergeChords, parseSong, songChords } from '../src/song.ts';
+import { isChordLine, mergeChords, parseSong, songChords, splitHeading } from '../src/song.ts';
 
 test('tells chord lines from lyrics', () => {
   assert.ok(isChordLine('Em            D    C'));
@@ -70,4 +70,20 @@ test('reads the key from a pasted "Tom:" line and ignores non-breaking spaces', 
       { chord: 'D', text: 'lone' },
     ],
   });
+});
+
+test('splits the title and artist off the top of a pasted cifra', () => {
+  const pasted = 'Row Your Boat\nTradicional\n\n[Intro] C  G\n\nC\nRow, row';
+  assert.deepEqual(splitHeading(pasted), {
+    title: 'Row Your Boat',
+    artist: 'Tradicional',
+    body: '\n[Intro] C  G\n\nC\nRow, row',
+  });
+  assert.equal(splitHeading('Row Your Boat\n\nC\nRow, row').title, 'Row Your Boat');
+});
+
+test('leaves the text alone when it does not open with a heading', () => {
+  for (const text of ['[Intro] C  G\n\nC\nRow, row', 'Row, row, row your boat\nGently\n\nStill lyrics']) {
+    assert.deepEqual(splitHeading(text), { body: text });
+  }
 });
