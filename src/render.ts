@@ -101,13 +101,11 @@ export function renderSong(song: Song, globalShapes: Record<string, Shape> = {})
     return `<figure class="dg"><figcaption>${esc(name)}</figcaption>${drawing}</figure>`;
   });
 
-  const meta = [
-    song.key && `<div><small>Tom</small><b>${esc(song.key)}</b></div>`,
-    song.capo && `<div><small>Capo</small><b>${esc(capoText(song.capo))}</b></div>`,
-  ].filter(Boolean);
-
+  // Key, capo and strumming share one strip under the title; the mark has the corner.
   const extras = [
-    song.strum && `<p class="strum"><small>Batida</small> ${esc(song.strum)}</p>`,
+    song.key && `<p class="fact"><small>Tom</small><b>${esc(song.key)}</b></p>`,
+    song.capo && `<p class="fact"><small>Capo</small><b>${esc(capoText(song.capo))}</b></p>`,
+    song.strum && `<p class="fact"><small>Batida</small><b>${esc(song.strum)}</b></p>`,
     song.notes.length && `<ul class="notes">${song.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`,
   ].filter(Boolean);
 
@@ -126,7 +124,6 @@ export function renderSong(song: Song, globalShapes: Record<string, Shape> = {})
       ${song.artist ? `<p class="artist">${esc(song.artist)}</p>` : ''}
       <h1>${esc(song.title)}</h1>
     </div>
-    ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
     ${markImg()}
   </header>
   ${extras.length ? `<div class="extras">${extras.join('')}</div>` : ''}

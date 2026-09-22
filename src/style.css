@@ -94,10 +94,6 @@ body {
   font-size: 8pt;
 }
 
-.mini .meta {
-  display: none;
-}
-
 .titles {
   flex: 1;
   min-width: 0;
@@ -119,42 +115,31 @@ h1 {
   color: var(--soft);
 }
 
-.meta {
-  display: flex;
-  gap: 5mm;
-  text-align: right;
-}
-
-.meta small,
-.strum small {
-  display: block;
-  font-size: 7pt;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--soft);
-}
-
-.meta b {
-  font-size: 13pt;
-}
-
 .extras {
   display: flex;
   flex-wrap: wrap;
-  gap: 1mm 6mm;
-  margin-top: 2mm;
+  align-items: baseline;
+  gap: 1mm 7mm;
+  margin-top: 2.5mm;
   font-size: 10pt;
 }
 
-.strum {
+.fact {
   margin: 0;
   display: flex;
   align-items: baseline;
   gap: 2mm;
 }
 
-.strum small {
-  display: inline;
+.fact small {
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.fact b {
+  font-size: 12pt;
 }
 
 .notes {
