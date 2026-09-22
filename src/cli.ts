@@ -110,7 +110,8 @@ async function readInput(): Promise<string> {
     return Buffer.concat(chunks).toString('utf8');
   }
   const readers: [string, string[]][] = [
-    ['wl-paste', ['--no-newline']],
+    // Text only: a screenshot left on the clipboard must not become a song.
+    ['wl-paste', ['--no-newline', '--type', 'text']],
     ['xclip', ['-selection', 'clipboard', '-o']],
     ['xsel', ['--clipboard', '--output']],
     ['pbpaste', []],
