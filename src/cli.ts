@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { COMMON_CHORDS, notePitch, parseChord, parseShapeSpec, shapeOptions, toSuffix, type Shape } from './chords.ts';
 import { fitSheets, launchBrowser, printPdf, renderPdf } from './pdf.ts';
 import { chordSheets, gather, renderChords, renderSong, type ChordUse } from './render.ts';
-import { isTabLine, parseSong, songChords, splitHeading, type Song } from './song.ts';
+import { isTabLine, parseSong, songChords, splitHeading, stripSiteChrome, type Song } from './song.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SONGS_DIR = join(ROOT, 'musicas');
@@ -238,7 +238,7 @@ async function ask(questions: string[]): Promise<string[]> {
 }
 
 async function createSong(titleArg: string | undefined, artistArg: string | undefined): Promise<void> {
-  const text = (await readInput()).replace(/\r\n?/g, '\n').replace(/^\s*\n|\s+$/g, '');
+  const text = stripSiteChrome(await readInput()).replace(/^\s*\n|\s+$/g, '');
   if (!text.trim()) throw new Error('o texto da cifra está vazio');
 
   const key = /^\s*tom:\s*(\S+)/im.exec(text)?.[1];

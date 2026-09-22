@@ -267,6 +267,38 @@ export function withoutTabs(blocks: Block[]): Block[] {
   });
 }
 
+/** Menus and footer of a cifra site, when the whole page gets copied instead of the cifra. */
+const CHROME_TOP = /^\s*pular para o conteúdo\s*$/i;
+const CHROME_BOTTOM = /^\s*(composi[çc][ãa]o\s*:|envio por|revisar composi|essa informa[çc][ãa]o|todos artistas|©)/i;
+
+/**
+ * Drops the site's own text around a cifra: the skip link and menu above it, and
+ * everything from the credits down. The two lines just above the cifra are kept,
+ * since those are the title and the artist.
+ */
+export function stripSiteChrome(text: string): string {
+  let lines = text.replace(/\r\n?/g, '\n').split('\n');
+
+  const top = lines.findIndex((line) => CHROME_TOP.test(line));
+  if (top >= 0) {
+    // The lone chord the site prints under its "Tom" heading is not the cifra yet.
+    const start = lines.findIndex((line, i) => {
+      if (i <= top || !(SECTION_RE.test(line) || isChordLine(line))) return false;
+      if (SECTION_RE.test(line)) return true;
+      const above = lines.slice(top + 1, i).filter((previous) => previous.trim());
+      return !/^\s*(tom|capo|afina)/i.test(above[above.length - 1] ?? '');
+    });
+    if (start > 0) {
+      const heading = lines.slice(top + 1, start).filter((line) => line.trim());
+      lines = [...heading.slice(-2), '', ...lines.slice(start)];
+    }
+  }
+
+  const bottom = lines.findIndex((line) => CHROME_BOTTOM.test(line));
+  if (bottom > 0) lines = lines.slice(0, bottom);
+  return lines.join('\n').replace(/\s+$/, '');
+}
+
 /**
  * Pasted cifras often open with the title and artist, one per line, before the
  * first section or chord line. Splits them off when the text looks like that.

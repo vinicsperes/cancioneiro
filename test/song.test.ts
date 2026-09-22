@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isChordLine, mergeChords, parseSong, sliceTab, songChords, splitHeading } from '../src/song.ts';
+import {
+  isChordLine,
+  mergeChords,
+  parseSong,
+  sliceTab,
+  songChords,
+  splitHeading,
+  stripSiteChrome,
+} from '../src/song.ts';
 
 test('tells chord lines from lyrics', () => {
   assert.ok(isChordLine('Em            D    C'));
@@ -135,6 +143,30 @@ Under the bridge
   );
   assert.deepEqual(songChords(song), ['E', 'B', 'A9']);
   assert.equal(parseSong(text.replace('não', 'sim')).blocks.length, 9);
+});
+
+test('drops the menu and the credits when a whole cifra page is pasted', () => {
+  const pasted = `Pular para o conteúdo
+
+Tom
+
+C
+
+O Ciclo
+Uniclãs
+
+[Intro] C  Am
+
+C
+Não adianta
+
+Composição: Nando
+
+Revisar composição
+© 1996 - 2026`;
+  assert.equal(stripSiteChrome(pasted), 'O Ciclo\nUniclãs\n\n[Intro] C  Am\n\nC\nNão adianta');
+  const clean = 'Row Your Boat\nTradicional\n\n[Intro] C  G';
+  assert.equal(stripSiteChrome(clean), clean);
 });
 
 test('reads the key from a pasted "Tom:" line and ignores non-breaking spaces', () => {
