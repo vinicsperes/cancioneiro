@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join, relative, resolve } from 'node:path';
+import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { parseShapeSpec, type Shape } from './chords.ts';
 import { launchBrowser, renderPdf } from './pdf.ts';
@@ -118,15 +119,27 @@ async function readInput(): Promise<string> {
   throw new Error('não consegui ler a área de transferência; envie o texto pela entrada padrão');
 }
 
+async function ask(questions: string[]): Promise<string[]> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answers: string[] = [];
+    for (const question of questions) answers.push((await rl.question(question)).trim());
+    return answers;
+  } finally {
+    rl.close();
+  }
+}
+
 async function createSong(titleArg: string | undefined, artistArg: string | undefined): Promise<void> {
   const text = (await readInput()).replace(/\r\n?/g, '\n').replace(/^\s*\n|\s+$/g, '');
   if (!text.trim()) throw new Error('o texto da cifra está vazio');
 
   const key = /^\s*tom:\s*(\S+)/im.exec(text)?.[1];
   const heading = splitHeading(text.replace(/^\s*tom:.*\n?/im, ''));
-  const title = titleArg ?? heading.title;
+  let title = titleArg ?? heading.title;
+  let artist = artistArg ?? heading.artist;
+  if (!title && process.stdin.isTTY) [title, artist] = await ask(['Título: ', 'Artista: ']);
   if (!title) throw new Error('informe o título: cancioneiro nova "Título" ["Artista"]');
-  const artist = artistArg ?? heading.artist;
   // A heading that repeats the given title is dropped; anything else might be lyrics.
   const keepsHeading = titleArg !== undefined && fold(titleArg).toLowerCase() !== fold(heading.title ?? '').toLowerCase();
   const body = (keepsHeading ? text.replace(/^\s*tom:.*\n?/im, '') : heading.body).replace(/^\s*\n/, '');
