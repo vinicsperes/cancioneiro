@@ -9,8 +9,9 @@
   --ink: #111;
   --soft: #5c5c5c;
   --rule: #b5b5b5;
-  /* Dark enough to stay crisp when a colour page is printed in greyscale. */
-  --accent: #d9480f;
+  /* Only the chords are coloured, so colour alone means "this is a chord". Deep
+     enough to stay readable on paper and crisp when printed in greyscale. */
+  --accent: #c81e14;
 }
 
 * {
@@ -256,13 +257,13 @@ h1 {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--soft);
   break-after: avoid;
 }
 
 .chorus {
   padding-left: 0.6em;
-  border-left: 2pt solid var(--accent);
+  border-left: 2pt solid var(--soft);
 }
 
 .line {

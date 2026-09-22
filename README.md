@@ -5,6 +5,7 @@ print-ready A4 pages for a songbook binder.
 
 - Each chord sits on the exact syllable where it changes, even mid-word.
 - Diagrams with finger numbers for every chord in the song.
+- Chords are the only thing in colour, so colour alone tells them from the lyrics.
 - Songs are fitted to a single sheet when possible (one or two columns, 15–11pt),
   otherwise they carry over to numbered sheets.
 
