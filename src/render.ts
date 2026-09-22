@@ -114,10 +114,9 @@ export function renderSong(song: Song, globalShapes: Record<string, Shape> = {})
 <body>
 <main class="page">
   <header class="head">
-    ${song.number ? `<div class="num">${String(song.number).padStart(2, '0')}</div>` : ''}
     <div class="titles">
-      <h1>${esc(song.title)}</h1>
       ${song.artist ? `<p class="artist">${esc(song.artist)}</p>` : ''}
+      <h1>${esc(song.title)}</h1>
     </div>
     ${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}
   </header>

@@ -24,11 +24,13 @@ Copy a chord sheet, then:
 npm run nova                              # title and artist read from the pasted text
 npm run nova -- "Song title" "Artist"     # or given explicitly
 npm run pdf                               # rebuild every song in musicas/
-npm run pdf -- musicas/03-song.txt        # rebuild one
+npm run pdf -- musicas/artist--song.txt   # rebuild one
 ```
 
 Text is read from the clipboard, or from stdin when piped. Songs are saved to
-`musicas/NN-title.txt` and PDFs to `saida/`.
+`musicas/artist--title.txt` and PDFs to `saida/` under the same name, so both sort by
+artist: a new song slots into its place in the binder. Pasting a song that already
+exists asks before replacing it.
 
 ## Song format
 

@@ -25,7 +25,6 @@ export interface Song {
   key?: string;
   capo?: string;
   strum?: string;
-  number?: number;
   /** `tabs: não` in the header leaves the tabs out. */
   tabs?: boolean;
   notes: string[];
@@ -145,9 +144,6 @@ function parseHeader(song: Song, lines: string[]): void {
       case 'batida':
       case 'ritmo':
         song.strum = value;
-        break;
-      case 'numero':
-        song.number = Number.parseInt(value, 10) || undefined;
         break;
       case 'tab':
       case 'tabs':

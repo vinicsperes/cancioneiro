@@ -22,21 +22,27 @@ Uso:
   cancioneiro nova ["Título"] ["Artista"] cria uma música a partir do texto copiado (ou da entrada padrão);
                                          sem título, usa as primeiras linhas do texto (título e artista)
 
-Os PDFs vão para saida/.`;
+As músicas ficam em musicas/artista--titulo.txt e os PDFs em saida/, na mesma ordem.`;
 
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '');
 }
 
 function slugify(text: string): string {
-  return fold(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return fold(text).toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function titleFromFile(file: string): { title: string; number?: number } {
-  const name = basename(file, extname(file));
-  const m = /^(\d+)[-_ ]+(.*)$/.exec(name);
-  const words = (m ? m[2] : name).replace(/[-_]+/g, ' ');
-  return { title: words.replace(/\b\p{L}/gu, (c) => c.toUpperCase()), number: m ? Number(m[1]) : undefined };
+/** Songs are filed as `artista--titulo.txt`, so they sort by artist. */
+function songFile(title: string, artist?: string): string {
+  const parts = [artist, title].filter((part): part is string => !!part);
+  return join(SONGS_DIR, `${parts.map(slugify).join('--')}.txt`);
+}
+
+/** Title and artist from a song's file name, for headers that leave them out. */
+function namesFromFile(file: string): { title: string; artist?: string } {
+  const words = (slug: string) => slug.replace(/[-_]+/g, ' ').replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+  const [first, second] = basename(file, extname(file)).split('--');
+  return second ? { title: words(second), artist: words(first) } : { title: words(first) };
 }
 
 async function loadGlobalShapes(): Promise<Record<string, Shape>> {
@@ -63,9 +69,9 @@ async function songFiles(dir: string): Promise<string[]> {
 
 async function loadSong(file: string): Promise<Song> {
   const song = parseSong(await readFile(file, 'utf8'));
-  const fromName = titleFromFile(file);
+  const fromName = namesFromFile(file);
   song.title ||= fromName.title;
-  song.number ??= fromName.number;
+  song.artist ||= fromName.artist;
   return song;
 }
 
@@ -82,7 +88,7 @@ async function buildPdfs(files: string[]): Promise<void> {
       const song = await loadSong(file);
       const { html, missing } = renderSong(song, shapes);
       const out = join(OUT_DIR, `${basename(file, extname(file))}.pdf`);
-      const label = [song.number && String(song.number).padStart(2, '0'), song.title].filter(Boolean).join(' · ');
+      const label = [song.artist, song.title].filter(Boolean).join(' · ');
       const layout = await renderPdf(browser, html, out, label);
 
       const pages = layout.pages === 1 ? '1 folha' : `${layout.pages} folhas`;
@@ -140,6 +146,12 @@ async function createSong(titleArg: string | undefined, artistArg: string | unde
   let artist = artistArg ?? heading.artist;
   if (!title && process.stdin.isTTY) [title, artist] = await ask(['Título: ', 'Artista: ']);
   if (!title) throw new Error('informe o título: cancioneiro nova "Título" ["Artista"]');
+  const file = songFile(title, artist);
+  const name = relative(process.cwd(), file);
+  if (existsSync(file)) {
+    const [answer] = process.stdin.isTTY ? await ask([`${name} já existe. Substituir? [s/N] `]) : [''];
+    if (!/^s/i.test(answer)) throw new Error(`${name} já existe; nada foi alterado`);
+  }
   // A heading that repeats the given title is dropped; anything else might be lyrics.
   const keepsHeading = titleArg !== undefined && fold(titleArg).toLowerCase() !== fold(heading.title ?? '').toLowerCase();
   const body = (keepsHeading ? text.replace(/^\s*tom:.*\n?/im, '') : heading.body).replace(/^\s*\n/, '');
@@ -152,9 +164,6 @@ async function createSong(titleArg: string | undefined, artistArg: string | unde
 
 
   await mkdir(SONGS_DIR, { recursive: true });
-  const numbers = (await songFiles(SONGS_DIR)).map((f) => titleFromFile(f).number ?? 0);
-  const number = Math.max(0, ...numbers) + 1;
-  const file = join(SONGS_DIR, `${String(number).padStart(2, '0')}-${slugify(title)}.txt`);
 
   const header = [
     '---',
@@ -167,7 +176,7 @@ async function createSong(titleArg: string | undefined, artistArg: string | unde
     '---',
   ];
   await writeFile(file, `${header.join('\n')}\n\n${body}\n`);
-  console.log(`+ ${relative(process.cwd(), file)}`);
+  console.log(`+ ${name}`);
   await buildPdfs([file]);
 }
 

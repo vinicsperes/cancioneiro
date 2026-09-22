@@ -61,29 +61,28 @@ body {
   border-bottom: 1.2pt solid var(--ink);
 }
 
-.num {
-  color: var(--accent);
-  font-size: 26pt;
-  font-weight: 700;
-  line-height: 0.85;
-  font-variant-numeric: tabular-nums;
-}
-
 .head.mini {
   margin-bottom: 4mm;
   padding-bottom: 1.5mm;
   border-bottom-width: 0.6pt;
 }
 
-.mini .num {
-  font-size: 15pt;
+/* Continuation sheets keep the artist and title on one line. */
+.mini .titles {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
 }
 
 .mini h1 {
   font-size: 13pt;
 }
 
-.mini .artist,
+.mini .artist {
+  margin: 0;
+  font-size: 8pt;
+}
+
 .mini .meta {
   display: none;
 }
@@ -99,9 +98,13 @@ h1 {
   line-height: 1.05;
 }
 
+/* Songs are filed by artist, so the artist is what you look for when leafing through. */
 .artist {
-  margin: 0.8mm 0 0;
-  font-size: 11pt;
+  margin: 0 0 1mm;
+  font-size: 10pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--soft);
 }
 
