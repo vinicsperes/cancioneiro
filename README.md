@@ -28,6 +28,9 @@ npm run nova -- "Song title" "Artist"     # or given explicitly
 npm run pdf                               # rebuild every song in musicas/
 npm run pdf -- musicas/artist--song.txt   # rebuild one
 npm run acordes                           # saida/acordes.pdf: every chord, to study
+npm run livro                             # saida/cancioneiro.pdf: the whole binder in one file
+npm run livro -- --frente-e-verso         # ...with a blank sheet so each song starts on a front
+npm run setlist -- musicas/a.txt b.txt    # saida/setlist.pdf, in the order given
 ```
 
 Text is read from the clipboard, or from stdin when piped. Songs are saved to

@@ -116,6 +116,11 @@ export interface ChordUse {
 /** Chords per study sheet: three across, nine down, each with its variations. */
 const PER_SHEET = 27;
 
+/** Gathers finished sheets — songs, chord sheets — into one document to print. */
+export function gather(title: string, sheets: string[]): string {
+  return htmlPage(title, sheets.join('\n'));
+}
+
 /** Sheets of every chord in the songbook, to study away from the songs. */
 export function chordSheets(chords: ChordUse[]): string[] {
   const sheets = [];
@@ -140,7 +145,7 @@ export function chordSheets(chords: ChordUse[]): string[] {
 }
 
 export function renderChords(chords: ChordUse[]): string {
-  return htmlPage('Acordes', chordSheets(chords).join('\n'));
+  return gather('Acordes', chordSheets(chords));
 }
 
 export interface RenderResult {

@@ -10,6 +10,8 @@
   "scripts": {
     "pdf": "node src/cli.ts pdf",
     "acordes": "node src/cli.ts acordes",
+    "livro": "node src/cli.ts livro",
+    "setlist": "node src/cli.ts setlist",
     "nova": "node src/cli.ts nova",
     "test": "node --test test/*.test.ts",
     "check": "tsc"

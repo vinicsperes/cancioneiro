@@ -162,18 +162,31 @@ async function fit(browser: Browser, html: string, label: string) {
 }
 
 export async function renderPdf(browser: Browser, html: string, outPath: string, label: string): Promise<Layout> {
-  const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  const { page, layout } = await fit(browser, html, label);
   try {
-    await page.emulateMedia({ media: 'print' });
-    await page.setContent(html, { waitUntil: 'load' });
-    await page.evaluate(() => document.fonts.ready);
-    const layout = await page.evaluate(fitLayout, {
-      candidates: CANDIDATES,
-      maxWrapped: MAX_WRAPPED_LINES,
-      label,
-    });
     await page.pdf({ path: outPath, preferCSSPageSize: true, printBackground: true });
     return layout;
+  } finally {
+    await page.close();
+  }
+}
+
+/**
+ * The sheets of one fitted song, to gather with others into a single book. The
+ * chosen size and column count move from the root onto each sheet, so songs that
+ * were fitted differently keep their own layout side by side.
+ */
+export async function fitSheets(browser: Browser, html: string, label: string): Promise<string[]> {
+  const { page } = await fit(browser, html, label);
+  try {
+    return await page.evaluate(() => {
+      const root = document.documentElement;
+      return [...document.querySelectorAll<HTMLElement>('.page')].map((sheet) => {
+        for (const name of ['--fs', '--cols']) sheet.style.setProperty(name, root.style.getPropertyValue(name));
+        for (const on of ['cols-2', 'split']) sheet.classList.toggle(on, root.classList.contains(on));
+        return sheet.outerHTML;
+      });
+    });
   } finally {
     await page.close();
   }
